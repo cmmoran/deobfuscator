@@ -1166,7 +1166,9 @@ public class MethodExecutor {
                         MethodInsnNode cast = (MethodInsnNode) now;
                         Type type = Type.getReturnType(cast.desc);
                         List<JavaValue> args = new ArrayList<>();
-                        for (Type t1 : Type.getArgumentTypes(cast.desc)) {
+                        List<Type> l = new ArrayList<>(Arrays.asList(Type.getArgumentTypes(cast.desc)));
+                        Collections.reverse(l);
+                        for (Type t1 : l) {
                             if (t1.getSort() == Type.LONG || t1.getSort() == Type.DOUBLE) {
                                 if (!(stack.get(0) instanceof JavaTop)) {
                                     throw new ExecutionException("Expected JavaTop");
@@ -1264,7 +1266,9 @@ public class MethodExecutor {
                         MethodInsnNode cast = (MethodInsnNode) now;
                         Type type = Type.getReturnType(cast.desc);
                         List<JavaValue> args = new ArrayList<>();
-                        for (Type t1 : Type.getArgumentTypes(cast.desc)) {
+                        List<Type> l = new ArrayList<>(Arrays.asList(Type.getArgumentTypes(cast.desc)));
+                        Collections.reverse(l);
+                        for (Type t1 : l) {
                             if (t1.getSort() == Type.LONG || t1.getSort() == Type.DOUBLE) {
                                 if (!(stack.get(0) instanceof JavaTop)) {
                                     throw new ExecutionException("Expected JavaTop");
@@ -1443,7 +1447,9 @@ public class MethodExecutor {
                         MethodInsnNode cast = (MethodInsnNode) now;
                         Type type = Type.getReturnType(cast.desc);
                         List<JavaValue> args = new ArrayList<>();
-                        for (Type t1 : Type.getArgumentTypes(cast.desc)) {
+                        List<Type> l = new ArrayList<>(Arrays.asList(Type.getArgumentTypes(cast.desc)));
+                        Collections.reverse(l);
+                        for (Type t1 : l) {
                             if (t1.getSort() == Type.LONG || t1.getSort() == Type.DOUBLE) {
                                 if (!(stack.get(0) instanceof JavaTop)) {
                                     throw new ExecutionException("Expected JavaTop");
@@ -1607,7 +1613,9 @@ public class MethodExecutor {
 									args.add(JavaValue.valueOf(arg));
 							}
 							List<JavaValue> newArgs = new ArrayList<>();
-							for (Type t1 : Type.getArgumentTypes(cast.desc)) {
+							List<Type> l = new ArrayList<>(Arrays.asList(Type.getArgumentTypes(cast.desc)));
+	                        Collections.reverse(l);
+	                        for (Type t1 : l) {
 	                            if (t1.getSort() == Type.LONG || t1.getSort() == Type.DOUBLE) {
 	                                if (!(stack.get(0) instanceof JavaTop)) {
 	                                    throw new ExecutionException("Expected JavaTop");
@@ -1698,9 +1706,15 @@ public class MethodExecutor {
                     case CHECKCAST: {
                         TypeInsnNode cast = (TypeInsnNode) now;
                         JavaValue obj = stack.get(0);
+                        Type type;
+                        try {
+                            type = Type.getType(cast.desc);
+                        } catch (Throwable ignored) {
+                            type = Type.getObjectType(cast.desc);
+                        }
                         if (obj.value() != null) {
-                            if (context.provider.canCheckcast(obj, Type.getType(cast.desc), context)) {
-                                if (!context.provider.checkcast(obj, Type.getType(cast.desc), context)) {
+                            if (context.provider.canCheckcast(obj, type, context)) {
+                                if (!context.provider.checkcast(obj, type, context)) {
                                     throw new ClassCastException(cast.desc);
                                 }
                             } else {
@@ -1712,8 +1726,14 @@ public class MethodExecutor {
                     case INSTANCEOF: {
                         TypeInsnNode cast = (TypeInsnNode) now;
                         JavaValue obj = stack.remove(0);
-                        if (context.provider.canCheckInstanceOf(obj, Type.getType(cast.desc), context)) {
-                            boolean is = context.provider.instanceOf(obj, Type.getType(cast.desc), context);
+                        Type type;
+                        try {
+                            type = Type.getType(cast.desc);
+                        } catch (Throwable ignored) {
+                            type = Type.getObjectType(cast.desc);
+                        }
+                        if (context.provider.canCheckInstanceOf(obj, type, context)) {
+                            boolean is = context.provider.instanceOf(obj, type, context);
                             stack.add(0, new JavaInteger(is ? 1 : 0));
                         } else {
                             throw new NoSuchComparisonHandlerException("No comparator found for " + cast.desc);
